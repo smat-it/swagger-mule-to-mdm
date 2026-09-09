@@ -394,10 +394,11 @@ paths:
       tags: [Contracts]
       summary: Crea/sincronizza un contratto verso il backend MDM
       description: >-
-        [ILLUSTRATIVO] Il body viene consumato da sotto-flussi (contract,
-        billing, contractLineItem, customer, pdp, asset, plant) NON presenti nel
-        file e da MDM_contract.dwl. Lo schema esatto non e' ricavabile: l'esempio
-        e' una struttura plausibile che raccoglie le entita' toccate dal flusso.
+        [DERIVATO da MDM_contract.dwl] Struttura del contratto inviata al backend
+        MDM (POST /api/v1/sys-mdm/contracts/contract). Il payload viene assemblato
+        dal flusso aggregando dati Salesforce (ServiceContract, BillingProfile,
+        ContractLine, Account, PDP, PDPAsset, Asset, Tank) e lo stradario Egon dal
+        DB. Rappresenta la vista canonica di un contratto in questa integrazione.
       operationId: createContract
       requestBody:
         required: true
@@ -406,26 +407,147 @@ paths:
             schema:
               $ref: '#/components/schemas/ContractRequest'
             example:
-              contract:
-                ContractCode: "CT-000123"
-                StartDate: "2025-01-01"
+              Id: "CT-000123"
+              ContractName: "CT-000123"
+              ExtId: "EXT-CT-000123"
+              RefCode: "REF-778899"
+              StartDate: "2025-01-01"
+              EndDate: "2027-12-31"
+              SigningDate: "2024-12-15"
+              Stage: "Active"
+              SupplyType: "Acqua"
+              TransferType: "Voltura"
+              ActivationReason: "Nuova attivazione"
+              EndReason: null
+              MorosityType: "Nessuna"
+              SupplyNotUsed: "false"
+              DivisionalCounters: false
+              BillingFrequencyCode: "BIM"
+              WarningReadingCounter: ""
+              PhoneReadingCounter: "0110000000"
+              TelephoneReadingCounter: "0110000001"
+              EmailReadingCounter: "letture@example.com"
+              ParentId: null
+              Company: "001"
+              BillingProfiles:
+                - Id: "a1B0X0000000001"
+                  Name: "BP-0001"
+                  StartDate: "2025-01-01"
+                  EndDate: "2025-12-31"
+                  Company: "001"
+              Customer:
+                RecordType: "PersonAccount"
+                Id: "1000456"
+                Name: "Mario Rossi"
+                Email: "mario.rossi@example.com"
+                Phone: "3330000000"
+                Pec: "mario.rossi@pec.example.com"
+                PublicEntity: false
+                Company: "001"
+                Address:
+                  Street: "Via Roma 1"
+                  Country: "IT"
+                  City: "Torino"
+                  State: "TO"
+                  PostalCode: "10121"
+                  Locality: "Torino"
+                  EgonCode: "EGON-CUST-789"
+                  IstatCode: "001272"
+                  Latitude: "45.0703"
+                  Longitude: "7.6869"
+              PDP:
+                Id: "PDP-45678"
+                Name: "PDP-45678"
+                Role: "Titolare"
                 Status: "Attivo"
-              billingProfiles:
-                - Frequency: "Bimestrale"
-                  PaymentMethod: "SDD"
-              contractLines:
-                - Product: "Fornitura Acqua"
-                  Quantity: 1
-              customer:
-                Code: "1000456"
-                EgonCode: "EGON-CUST-789"
-              pdp:
-                Code: "PDP-45678"
-                EgonCode: "EGON-PDP-321"
-              asset:
-                SerialNumber: "SN-998877"
-              tank:
-                Code: "TANK-001"
+                Service: "Acqua"
+                Accessibility: "Libero"
+                ConditionType: "Standard"
+                ReadingUnit: "mc"
+                FlowClass: "C"
+                Code: "45678"
+                Code2: "12345"
+                Code3: "67890"
+                DateFrom: "2025-01-01"
+                DateTo: null
+                ModificationDate: "2025-01-10T09:30:00"
+                Company: "001"
+                Tank:
+                  Id: "TANK-001"
+                  Name: "Serbatoio Nord"
+                  Service: "Acqua"
+                  IsActive: true
+                  Company: "001"
+                Address:
+                  Street: "Via Milano 5"
+                  Country: "IT"
+                  City: "Torino"
+                  State: "Torino"
+                  PostalCode: "10122"
+                  Locality: "Torino"
+                  EgonCode: "EGON-PDP-321"
+                  IstatCode: "001272"
+                  Latitude: "45.0710"
+                  Longitude: "7.6850"
+                Meters:
+                  - Id: "a2C0X0000000001"
+                    Status: "Installato"
+                    OpeningDate: "2025-01-02"
+                    OpeningValue: 0
+                    ClosingDate: null
+                    ClosingValue: null
+                    DateRemoved: null
+                    PoseDate: "2025-01-02"
+                    ReadAccessibility: "Diretta"
+                    PhysicalAccessibilityMeter: "Facile"
+                    RemotelyManaged: false
+                    NotesMeterLocation: "Contatore in nicchia esterna"
+                    Company: "001"
+                    Asset:
+                      SerialNumber: "SN-998877"
+                      SerialNumberRadio: "RAD-112233"
+                      SerialNumberRadio2: "RAD-445566"
+                      Description: "Contatore acqua DN20"
+                      Brand: "Sensus"
+                      Model: "iPERL"
+                      Class: "C"
+                      MetrologicalClass: "R160"
+                      Technology: "Static"
+                      Protocol: "wM-Bus"
+                      Status: "Installed"
+                      Service: "Acqua"
+                      Q3FlowRate: 2.5
+                      MaxFlowRate: 3.125
+                      MinFlowRate: 0.016
+                      Length: 190
+                      DigitsNumber: 6
+                      Year: 2024
+                      AppKey: "A1B2C3D4"
+                      Company: "EXT-COMP-001"
+                ContractLine:
+                  - Id: "8010X0000000001"
+                    StartDate: "2025-01-01"
+                    EndDate: "2027-12-31"
+                    TICSIUsage: "Domestico residente"
+                    MacroTICSI: "Domestico"
+                    Ato: "ATO3"
+                    SupplyContractInsuranceWaterLossCode: "SMAT-0001"
+                    AgreedVolumeMc: 200
+                    ConcessionNumber: null
+                    Aqueduct: true
+                    CommercialActivity: null
+                    NoSecurityDeposit: false
+                    SewerageContribution: true
+                    PurificationContribution: true
+                    HomeComponent: 1
+                    ResidentCondominiumComponent: 0
+                    DomesticUnit: 1
+                    NonResidentCondominiumComponent: 0
+                    NonDomesticUnit: 0
+                    NonDomesticComponent: 0
+                    ReferenceYear180: false
+                    ReferenceYear400: false
+                    PriceBookExtId: "PB-ENTRY-001"
       responses:
         '200':
           description: Contratto elaborato
@@ -618,16 +740,193 @@ components:
 
     ContractRequest:
       type: object
-      description: '[ILLUSTRATIVO] Aggrega le entita toccate dal flusso; schema da validare.'
+      description: >-
+        [DERIVATO da MDM_contract.dwl] Contratto inviato al backend MDM,
+        assemblato da Salesforce + stradario Egon.
       properties:
-        contract: { type: object }
-        billingProfiles:
+        Id: { type: string, description: "ServiceContract.Name" }
+        ContractName: { type: string, description: "ServiceContract.Name" }
+        ExtId: { type: string }
+        RefCode: { type: string }
+        StartDate: { type: string, format: date }
+        EndDate: { type: string, format: date }
+        SigningDate: { type: string, format: date }
+        Stage: { type: string }
+        SupplyType: { type: string }
+        TransferType: { type: string }
+        ActivationReason: { type: string }
+        EndReason: { type: string, nullable: true }
+        MorosityType: { type: string }
+        SupplyNotUsed: { type: string }
+        DivisionalCounters: { type: boolean, default: false }
+        BillingFrequencyCode: { type: string }
+        WarningReadingCounter: { type: string, default: "" }
+        PhoneReadingCounter: { type: string }
+        TelephoneReadingCounter: { type: string }
+        EmailReadingCounter: { type: string }
+        ParentId: { type: string, nullable: true, description: "ParentServiceContractId" }
+        Company: { type: string }
+        BillingProfiles:
           type: array
-          items: { type: object }
-        contractLines:
+          items:
+            $ref: '#/components/schemas/BillingProfile'
+        Customer:
+          $ref: '#/components/schemas/ContractCustomer'
+        PDP:
+          $ref: '#/components/schemas/ContractPDP'
+
+    BillingProfile:
+      type: object
+      properties:
+        Id: { type: string }
+        Name: { type: string }
+        StartDate: { type: string, format: date }
+        EndDate: { type: string, format: date }
+        Company: { type: string }
+
+    ContractAddress:
+      type: object
+      description: "Indirizzo arricchito con lo stradario Egon (campi DSXOBJ*, CDXZIP)."
+      properties:
+        Street: { type: string, description: "Egon DSXOBJSTR" }
+        Country: { type: string, default: "IT" }
+        City: { type: string, description: "Egon DSXOBJCNL" }
+        State: { type: string }
+        PostalCode: { type: string, description: "Egon CDXZIP" }
+        Locality: { type: string, description: "Egon DSXOBJCNL" }
+        EgonCode: { type: string }
+        IstatCode: { type: string }
+        Latitude: { type: string, nullable: true }
+        Longitude: { type: string, nullable: true }
+
+    ContractCustomer:
+      type: object
+      description: "Account Salesforce (con logica IsPersonAccount)."
+      properties:
+        RecordType: { type: string, description: "RecordTypeName" }
+        Id: { type: string, description: "Account.Code__c" }
+        Name: { type: string }
+        Email: { type: string }
+        Phone: { type: string }
+        Pec: { type: string }
+        PublicEntity: { type: boolean, default: false }
+        Company: { type: string }
+        Address:
+          $ref: '#/components/schemas/ContractAddress'
+
+    Tank:
+      type: object
+      properties:
+        Id: { type: string, description: "Tank.ExtId__c" }
+        Name: { type: string }
+        Service: { type: string }
+        IsActive: { type: boolean, default: false }
+        Company: { type: string }
+
+    ContractPDP:
+      type: object
+      description: "Punto Di Prelievo con contatori (Meters) e linee contratto."
+      properties:
+        Id: { type: string, description: "PDP.Name" }
+        Name: { type: string }
+        Role: { type: string }
+        Status: { type: string }
+        Service: { type: string }
+        Accessibility: { type: string }
+        ConditionType: { type: string }
+        ReadingUnit: { type: string }
+        FlowClass: { type: string, nullable: true }
+        Code: { type: string, nullable: true }
+        Code2: { type: string, nullable: true }
+        Code3: { type: string, nullable: true }
+        DateFrom: { type: string, format: date }
+        DateTo: { type: string, format: date, nullable: true }
+        ModificationDate: { type: string, format: date-time }
+        Company: { type: string }
+        Tank:
+          $ref: '#/components/schemas/Tank'
+        Address:
+          $ref: '#/components/schemas/ContractAddress'
+        Meters:
           type: array
-          items: { type: object }
-        customer: { type: object }
-        pdp: { type: object }
-        asset: { type: object }
-        tank: { type: object }
+          items:
+            $ref: '#/components/schemas/Meter'
+        ContractLine:
+          type: array
+          items:
+            $ref: '#/components/schemas/ContractLine'
+
+    Meter:
+      type: object
+      description: "PDPAsset__c: associazione contatore-PDP con l'asset collegato."
+      properties:
+        Id: { type: string }
+        Status: { type: string }
+        OpeningDate: { type: string, format: date }
+        OpeningValue: { type: number }
+        ClosingDate: { type: string, format: date, nullable: true }
+        ClosingValue: { type: number, nullable: true }
+        DateRemoved: { type: string, format: date, nullable: true }
+        PoseDate: { type: string, format: date }
+        ReadAccessibility: { type: string }
+        PhysicalAccessibilityMeter: { type: string }
+        RemotelyManaged: { type: boolean, default: false }
+        NotesMeterLocation: { type: string }
+        Company: { type: string, description: "Valorizzato a '001' nel DWL" }
+        Asset:
+          allOf:
+            - $ref: '#/components/schemas/MeterAsset'
+          nullable: true
+
+    MeterAsset:
+      type: object
+      description: "Dati dell'Asset (misuratore) recuperati da Salesforce."
+      properties:
+        SerialNumber: { type: string }
+        SerialNumberRadio: { type: string }
+        SerialNumberRadio2: { type: string }
+        Description: { type: string }
+        Brand: { type: string }
+        Model: { type: string }
+        Class: { type: string }
+        MetrologicalClass: { type: string }
+        Technology: { type: string }
+        Protocol: { type: string }
+        Status: { type: string }
+        Service: { type: string }
+        Q3FlowRate: { type: number }
+        MaxFlowRate: { type: number }
+        MinFlowRate: { type: number }
+        Length: { type: number }
+        DigitsNumber: { type: integer }
+        Year: { type: integer }
+        AppKey: { type: string }
+        Company: { type: string, description: "Company__r.ExtId__c" }
+
+    ContractLine:
+      type: object
+      description: "ContractLine (linea di contratto) con componenti tariffarie."
+      properties:
+        Id: { type: string }
+        StartDate: { type: string, format: date }
+        EndDate: { type: string, format: date }
+        TICSIUsage: { type: string }
+        MacroTICSI: { type: string }
+        Ato: { type: string }
+        SupplyContractInsuranceWaterLossCode: { type: string, description: "SmatCardNumber__c" }
+        AgreedVolumeMc: { type: number, nullable: true }
+        ConcessionNumber: { type: number, nullable: true }
+        Aqueduct: { type: boolean, default: false }
+        CommercialActivity: { type: string, nullable: true }
+        NoSecurityDeposit: { type: boolean, default: false }
+        SewerageContribution: { type: boolean, default: false }
+        PurificationContribution: { type: boolean, default: false }
+        HomeComponent: { type: number, default: 0 }
+        ResidentCondominiumComponent: { type: number, default: 0 }
+        DomesticUnit: { type: number, default: 0 }
+        NonResidentCondominiumComponent: { type: number, default: 0 }
+        NonDomesticUnit: { type: number, default: 0 }
+        NonDomesticComponent: { type: number, default: 0 }
+        ReferenceYear180: { type: boolean, default: false }
+        ReferenceYear400: { type: boolean, default: false }
+        PriceBookExtId: { type: string, description: "PricebookEntry" }
