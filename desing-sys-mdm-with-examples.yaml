@@ -355,7 +355,13 @@ paths:
     post:
       tags: [Cases]
       summary: Crea un case su Salesforce
-      description: '[DERIVATO] Campi ricavati dai payload.X usati nel flusso.'
+      description: >-
+        [DERIVATO] Il chiamante invia CODICI/NOMI (ContractName, AssetSerialNumber,
+        CustomerCode, RecordType come DeveloperName, PdpCode opzionale) piu' Subject,
+        Description, CaseOrigin e Priority. Il flusso risolve i codici in Id Salesforce
+        tramite query e poi crea il Case. Il record effettivamente creato su Salesforce
+        (con gli Id risolti, Status fisso 'Nuovo' e PDP__c condizionale) e' documentato
+        a parte come schema SalesforceCaseRecord: NON e' il request body.
       operationId: createCase
       requestBody:
         required: true
@@ -645,6 +651,57 @@ components:
       properties:
         Id: { type: string, example: "5001x000ABCDEmQAF" }
         CaseNumber: { type: string, example: "00123456" }
+
+    SalesforceCaseRecord:
+      type: object
+      description: >-
+        [INTERNO - NON e' il request body] Record Case costruito dal flusso POST /case e
+        inviato a salesforce:create, dopo aver risolto gli input in Id Salesforce.
+        Documentato solo a scopo di mappatura: il chiamante non invia questi campi.
+      properties:
+        ServiceContractId:
+          type: string
+          description: "Id risolto da ServiceContract WHERE Name = ContractName"
+        AccountId:
+          type: string
+          description: "Id risolto da Account WHERE Code__c = CustomerCode"
+        AssetId:
+          type: string
+          description: "Id risolto da Asset WHERE SerialNumber = AssetSerialNumber"
+        RecordTypeId:
+          type: string
+          description: "Id risolto da RecordType WHERE DeveloperName = RecordType"
+        PDP__c:
+          type: string
+          nullable: true
+          description: "Id risolto da PDP WHERE Name = PdpCode (aggiunto solo se PdpCode presente)"
+        Subject:
+          type: string
+          description: "= payload.Subject"
+        Description:
+          type: string
+          description: "= payload.Description"
+        Origin:
+          type: string
+          description: "= payload.CaseOrigin"
+        Priority:
+          type: string
+          description: "= payload.Priority"
+        Status:
+          type: string
+          description: "Valore fisso impostato dal flusso"
+          example: "Nuovo"
+      example:
+        ServiceContractId: "8000X000000AAAAQA4"
+        AccountId: "0010X000004BBBBQAW"
+        AssetId: "02i0X000008CCCCQAW"
+        RecordTypeId: "0120X000000DDDDQAG"
+        PDP__c: "a050X000009EEEEQAW"
+        Subject: "Anomalia di consumo rilevata"
+        Description: "Consumo anomalo registrato sul misuratore SN-998877"
+        Origin: "MDM"
+        Priority: "Alta"
+        Status: "Nuovo"
 
     CaseSummary:
       type: object
