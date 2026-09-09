@@ -14,16 +14,13 @@ openapi: 3.0.3
 # =============================================================================
 
 info:
-  title: sys-mdm API (System API - MDM Integration)
-  description: >-
-    System API dell'integrazione tra Master Data Management (MDM) e Salesforce,
-    implementata in MuleSoft con APIkit. Ogni operazione POST riporta un esempio
-    di payload nel request body.
+  title: sys-mdm API 
+  description: 
   version: 1.0.0
 
 servers:
   - url: http://localhost:8081/api
-    description: Ambiente locale (http:listener path /api/*)
+    description: 
 
 tags:
   - name: Health
@@ -81,7 +78,7 @@ paths:
   /sys-mdm/assets/is-asset-remote-read:
     get:
       tags: [Assets]
-      summary: Verifica se un asset e' a lettura remota
+      summary:
       operationId: isAssetRemoteRead
       parameters:
         - name: Contract
@@ -108,8 +105,8 @@ paths:
   /sys-mdm/assets/asset:
     post:
       tags: [Assets]
-      summary: Invia un asset al backend MDM
-      description: '[COSTRUITO] Payload costruito dai campi Salesforce dell''Asset.'
+      summary:
+      description:
       operationId: postAsset
       requestBody:
         required: true
@@ -136,7 +133,7 @@ paths:
               Year: 2024
       responses:
         '200':
-          description: Asset inviato con successo
+          description:
           content:
             application/json:
               schema: { type: object }
@@ -174,10 +171,8 @@ paths:
           $ref: '#/components/responses/ErrorResponse'
     post:
       tags: [Readings]
-      summary: Invia una lettura al backend MDM
-      description: >-
-        [COSTRUITO] Payload costruito da MeterReading__c + ServiceContract +
-        Account + PDP + Asset di Salesforce.
+      summary:
+      description:
       operationId: postReading
       requestBody:
         required: true
@@ -266,12 +261,8 @@ paths:
   /sys-mdm/readings/readings-by-dates-and-contracts:
     post:
       tags: [Readings]
-      summary: Letture per date e contratti
-      description: >-
-        [ILLUSTRATIVO] Endpoint pass-through verso il backend: il codice inoltra
-        il body cosi' com'e' senza leggerne i campi, quindi lo schema NON e'
-        ricavabile dall'implementazione. L'esempio sotto e' plausibile ma va
-        verificato con il contratto reale del backend MDM.
+      summary:
+      description: 
       operationId: postReadingsByDatesAndContracts
       requestBody:
         required: true
@@ -300,7 +291,7 @@ paths:
   /sys-mdm/consumptionProfiles/consumption-profile:
     get:
       tags: [Consumption Profiles]
-      summary: Recupera un profilo di consumo
+      summary:
       operationId: getConsumptionProfile
       parameters:
         - name: Contract
@@ -354,14 +345,8 @@ paths:
           $ref: '#/components/responses/ErrorResponse'
     post:
       tags: [Cases]
-      summary: Crea un case su Salesforce
-      description: >-
-        [DERIVATO] Il chiamante invia CODICI/NOMI (ContractName, AssetSerialNumber,
-        CustomerCode, RecordType come DeveloperName, PdpCode opzionale) piu' Subject,
-        Description, CaseOrigin e Priority. Il flusso risolve i codici in Id Salesforce
-        tramite query e poi crea il Case. Il record effettivamente creato su Salesforce
-        (con gli Id risolti, Status fisso 'Nuovo' e PDP__c condizionale) e' documentato
-        a parte come schema SalesforceCaseRecord: NON e' il request body.
+      summary:
+      description:
       operationId: createCase
       requestBody:
         required: true
@@ -398,13 +383,8 @@ paths:
   /contract:
     post:
       tags: [Contracts]
-      summary: Crea/sincronizza un contratto verso il backend MDM
-      description: >-
-        [DERIVATO da MDM_contract.dwl] Struttura del contratto inviata al backend
-        MDM (POST /api/v1/sys-mdm/contracts/contract). Il payload viene assemblato
-        dal flusso aggregando dati Salesforce (ServiceContract, BillingProfile,
-        ContractLine, Account, PDP, PDPAsset, Asset, Tank) e lo stradario Egon dal
-        DB. Rappresenta la vista canonica di un contratto in questa integrazione.
+      summary:
+      description:
       operationId: createContract
       requestBody:
         required: true
@@ -569,8 +549,8 @@ paths:
   /meterProfile:
     post:
       tags: [Meter Profiles]
-      summary: Crea o aggiorna un MeterProfile su Salesforce
-      description: '[DERIVATO] Campi ricavati dai payload.X e mappati su MeterProfile__c.'
+      summary:
+      description:
       operationId: upsertMeterProfile
       requestBody:
         required: true
