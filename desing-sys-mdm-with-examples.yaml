@@ -1,0 +1,633 @@
+openapi: 3.0.3
+
+# =============================================================================
+# ATTENZIONE - Specifica RICOSTRUITA
+# -----------------------------------------------------------------------------
+# Non e' il RAML/OAS originale: e' ricostruita dai flussi APIkit e dai
+# Transform Message DataWeave dell'implementazione Mule.
+# Ogni POST include un ESEMPIO di body (campo "example").
+#
+# Legenda affidabilita' dei payload:
+#   [DERIVATO]     -> campi ricavati direttamente dal codice (payload.X usati)
+#   [COSTRUITO]    -> struttura costruita in un Transform Message del flusso
+#   [ILLUSTRATIVO] -> non ricavabile dal codice, esempio plausibile da validare
+# =============================================================================
+
+info:
+  title: sys-mdm API (System API - MDM Integration)
+  description: >-
+    System API dell'integrazione tra Master Data Management (MDM) e Salesforce,
+    implementata in MuleSoft con APIkit. Ogni operazione POST riporta un esempio
+    di payload nel request body.
+  version: 1.0.0
+
+servers:
+  - url: http://localhost:8081/api
+    description: Ambiente locale (http:listener path /api/*)
+
+tags:
+  - name: Health
+  - name: Assets
+  - name: Readings
+  - name: Consumption Profiles
+  - name: Contracts
+  - name: Meter Profiles
+  - name: Cases
+
+paths:
+
+  # ---------------------------------------------------------------------------
+  # HEALTH (nessun body)
+  # ---------------------------------------------------------------------------
+  /sys-mdm/health:
+    get:
+      tags: [Health]
+      summary: Health check
+      operationId: getHealth
+      responses:
+        '200':
+          description: Applicazione attiva
+
+  /sys-mdm/metrics:
+    get:
+      tags: [Health]
+      summary: Metriche applicative
+      operationId: getMetrics
+      responses:
+        '200':
+          description: Metriche restituite
+
+  /sys-mdm/metrics/prometheus:
+    get:
+      tags: [Health]
+      summary: Metriche formato Prometheus
+      operationId: getMetricsPrometheus
+      responses:
+        '200':
+          description: Metriche Prometheus restituite
+
+  /sys-mdm/stats:
+    get:
+      tags: [Health]
+      summary: Statistiche applicative
+      operationId: getStats
+      responses:
+        '200':
+          description: Statistiche restituite
+
+  # ---------------------------------------------------------------------------
+  # ASSETS
+  # ---------------------------------------------------------------------------
+  /sys-mdm/assets/is-asset-remote-read:
+    get:
+      tags: [Assets]
+      summary: Verifica se un asset e' a lettura remota
+      operationId: isAssetRemoteRead
+      parameters:
+        - name: Contract
+          in: query
+          required: true
+          schema: { type: string }
+        - name: AssetSerial
+          in: query
+          required: false
+          schema: { type: string }
+        - name: Pdp
+          in: query
+          required: false
+          schema: { type: string }
+      responses:
+        '200':
+          description: Esito della verifica
+          content:
+            application/json:
+              schema: { type: object }
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+
+  /sys-mdm/assets/asset:
+    post:
+      tags: [Assets]
+      summary: Invia un asset al backend MDM
+      description: '[COSTRUITO] Payload costruito dai campi Salesforce dell''Asset.'
+      operationId: postAsset
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AssetPayload'
+            example:
+              AppKey: "A1B2C3D4"
+              Brand: "Sensus"
+              Class: "C"
+              Company: "EXT-COMP-001"
+              DigitsNumber: 6
+              Id: "ASSET-000123"
+              Length: 190
+              MetrologicalClass: "R160"
+              Model: "iPERL"
+              Protocol: "wM-Bus"
+              Q3FlowRate: 2.5
+              SerialNumber: "SN-998877"
+              Service: "Acqua"
+              Status: "Installed"
+              Technology: "Static"
+              Year: 2024
+      responses:
+        '200':
+          description: Asset inviato con successo
+          content:
+            application/json:
+              schema: { type: object }
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+
+  # ---------------------------------------------------------------------------
+  # READINGS
+  # ---------------------------------------------------------------------------
+  /sys-mdm/readings/reading:
+    get:
+      tags: [Readings]
+      summary: Recupera una lettura
+      operationId: getReading
+      parameters:
+        - name: Contract
+          in: query
+          required: true
+          schema: { type: string }
+        - name: Date
+          in: query
+          required: false
+          schema: { type: string, format: date }
+        - name: Pdp
+          in: query
+          required: false
+          schema: { type: string }
+      responses:
+        '200':
+          description: Lettura restituita
+          content:
+            application/json:
+              schema: { type: object }
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+    post:
+      tags: [Readings]
+      summary: Invia una lettura al backend MDM
+      description: >-
+        [COSTRUITO] Payload costruito da MeterReading__c + ServiceContract +
+        Account + PDP + Asset di Salesforce.
+      operationId: postReading
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ReadingPayload'
+            example:
+              Consuming:
+                Date: "2025-06-01"
+                ReadingType: "Reale"
+                Status: "Validata"
+                Value: 1234.56
+                WaterDamage: false
+              Contract:
+                Id: "CT-000123"
+              Customer:
+                Id: "1000456"
+              Meter:
+                Id: "SN-998877"
+              PDP:
+                Id: "PDP-45678"
+      responses:
+        '200':
+          description: Lettura inviata con successo
+          content:
+            application/json:
+              schema: { type: object }
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+
+  /sys-mdm/readings/reading-validation:
+    get:
+      tags: [Readings]
+      summary: Valida una lettura
+      operationId: getReadingValidation
+      parameters:
+        - name: ContractNumber
+          in: query
+          required: true
+          schema: { type: string }
+        - name: ReadingDate
+          in: query
+          required: true
+          schema: { type: string, format: date }
+        - name: ReadingValue
+          in: query
+          required: true
+          schema: { type: number }
+      responses:
+        '200':
+          description: Esito della validazione
+          content:
+            application/json:
+              schema: { type: object }
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+
+  /sys-mdm/readings/reading-snapshot:
+    get:
+      tags: [Readings]
+      summary: Snapshot di una lettura
+      operationId: getReadingSnapshot
+      parameters:
+        - name: Contract
+          in: query
+          required: true
+          schema: { type: string }
+        - name: Date
+          in: query
+          required: false
+          schema: { type: string, format: date }
+        - name: Pdp
+          in: query
+          required: false
+          schema: { type: string }
+      responses:
+        '200':
+          description: Snapshot restituito
+          content:
+            application/json:
+              schema: { type: object }
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+
+  /sys-mdm/readings/readings-by-dates-and-contracts:
+    post:
+      tags: [Readings]
+      summary: Letture per date e contratti
+      description: >-
+        [ILLUSTRATIVO] Endpoint pass-through verso il backend: il codice inoltra
+        il body cosi' com'e' senza leggerne i campi, quindi lo schema NON e'
+        ricavabile dall'implementazione. L'esempio sotto e' plausibile ma va
+        verificato con il contratto reale del backend MDM.
+      operationId: postReadingsByDatesAndContracts
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ReadingsByDatesAndContractsRequest'
+            example:
+              contracts:
+                - "CT-000123"
+                - "CT-000124"
+              startDate: "2025-01-01"
+              endDate: "2025-01-31"
+      responses:
+        '200':
+          description: Letture restituite
+          content:
+            application/json:
+              schema: { type: object }
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+
+  # ---------------------------------------------------------------------------
+  # CONSUMPTION PROFILES
+  # ---------------------------------------------------------------------------
+  /sys-mdm/consumptionProfiles/consumption-profile:
+    get:
+      tags: [Consumption Profiles]
+      summary: Recupera un profilo di consumo
+      operationId: getConsumptionProfile
+      parameters:
+        - name: Contract
+          in: query
+          required: true
+          schema: { type: string }
+        - name: Date
+          in: query
+          required: true
+          schema: { type: string, format: date }
+      responses:
+        '200':
+          description: Profilo di consumo restituito
+          content:
+            application/json:
+              schema: { type: object }
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+
+  # ---------------------------------------------------------------------------
+  # CASES
+  # ---------------------------------------------------------------------------
+  /case:
+    get:
+      tags: [Cases]
+      summary: Ricerca case su Salesforce
+      operationId: getCases
+      parameters:
+        - name: Asset
+          in: query
+          required: false
+          schema: { type: string }
+        - name: PDPCode
+          in: query
+          required: false
+          schema: { type: string }
+        - name: ContractCode
+          in: query
+          required: false
+          schema: { type: string }
+      responses:
+        '200':
+          description: Elenco dei case trovati
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/CaseSummary'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+    post:
+      tags: [Cases]
+      summary: Crea un case su Salesforce
+      description: '[DERIVATO] Campi ricavati dai payload.X usati nel flusso.'
+      operationId: createCase
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateCaseRequest'
+            example:
+              ContractName: "CT-000123"
+              PdpCode: "PDP-45678"
+              AssetSerialNumber: "SN-998877"
+              CustomerCode: "1000456"
+              RecordType: "ConsumptionAnomaly"
+              Subject: "Anomalia di consumo rilevata"
+              Description: "Consumo anomalo registrato sul misuratore SN-998877"
+              CaseOrigin: "MDM"
+              Priority: "Alta"
+      responses:
+        '200':
+          description: Case creato
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CaseCreated'
+              example:
+                Id: "5001x000ABCDEmQAF"
+                CaseNumber: "00123456"
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+
+  # ---------------------------------------------------------------------------
+  # CONTRACTS
+  # ---------------------------------------------------------------------------
+  /contract:
+    post:
+      tags: [Contracts]
+      summary: Crea/sincronizza un contratto verso il backend MDM
+      description: >-
+        [ILLUSTRATIVO] Il body viene consumato da sotto-flussi (contract,
+        billing, contractLineItem, customer, pdp, asset, plant) NON presenti nel
+        file e da MDM_contract.dwl. Lo schema esatto non e' ricavabile: l'esempio
+        e' una struttura plausibile che raccoglie le entita' toccate dal flusso.
+      operationId: createContract
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ContractRequest'
+            example:
+              contract:
+                ContractCode: "CT-000123"
+                StartDate: "2025-01-01"
+                Status: "Attivo"
+              billingProfiles:
+                - Frequency: "Bimestrale"
+                  PaymentMethod: "SDD"
+              contractLines:
+                - Product: "Fornitura Acqua"
+                  Quantity: 1
+              customer:
+                Code: "1000456"
+                EgonCode: "EGON-CUST-789"
+              pdp:
+                Code: "PDP-45678"
+                EgonCode: "EGON-PDP-321"
+              asset:
+                SerialNumber: "SN-998877"
+              tank:
+                Code: "TANK-001"
+      responses:
+        '200':
+          description: Contratto elaborato
+          content:
+            application/json:
+              schema: { type: object }
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+
+  # ---------------------------------------------------------------------------
+  # METER PROFILES
+  # ---------------------------------------------------------------------------
+  /meterProfile:
+    post:
+      tags: [Meter Profiles]
+      summary: Crea o aggiorna un MeterProfile su Salesforce
+      description: '[DERIVATO] Campi ricavati dai payload.X e mappati su MeterProfile__c.'
+      operationId: upsertMeterProfile
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MeterProfileRequest'
+            example:
+              ContractCode: "CT-000123"
+              PDPCode: "PDP-45678"
+              Frequency: "Mensile"
+              StartDate: "2025-01-01"
+              EndDate: "2025-12-31"
+              Status: "Attivo"
+              AnnualValue: 1200.5
+      responses:
+        '200':
+          description: MeterProfile creato o aggiornato
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MeterProfileResponse'
+              example:
+                Id: "a0X1x000000ABCDEAA"
+                MeterProfile_Name: "MP-000123"
+                result: true
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+
+# =============================================================================
+# COMPONENTS
+# =============================================================================
+components:
+
+  responses:
+    ErrorResponse:
+      description: Errore restituito dall'API (formato standard APIkit/handler)
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            message: "Service contract not found"
+            type: "NOT_FOUND"
+            result: false
+
+  schemas:
+
+    Error:
+      type: object
+      properties:
+        message: { type: string }
+        type: { type: string }
+        result: { type: boolean, example: false }
+
+    CreateCaseRequest:
+      type: object
+      required: [ContractName, AssetSerialNumber, CustomerCode, RecordType]
+      properties:
+        ContractName: { type: string, example: "CT-000123" }
+        PdpCode: { type: string, example: "PDP-45678" }
+        AssetSerialNumber: { type: string, example: "SN-998877" }
+        CustomerCode: { type: string, example: "1000456" }
+        RecordType:
+          type: string
+          example: "ConsumptionAnomaly"
+          description: >-
+            DeveloperName del RecordType. Valori attesi (dal filtro nel GET):
+            ReplacementMeter, VerificationReadingCounter, ConsumptionAnomaly,
+            VerificaMetrologica, VerificaPressioneMisuratore.
+        Subject: { type: string, example: "Anomalia di consumo rilevata" }
+        Description: { type: string, example: "Consumo anomalo registrato" }
+        CaseOrigin: { type: string, example: "MDM" }
+        Priority: { type: string, example: "Alta" }
+
+    CaseCreated:
+      type: object
+      properties:
+        Id: { type: string, example: "5001x000ABCDEmQAF" }
+        CaseNumber: { type: string, example: "00123456" }
+
+    CaseSummary:
+      type: object
+      properties:
+        PdpCode: { type: string }
+        CustomerCode: { type: string }
+        AssetSerialNumber: { type: string }
+        ContractName: { type: string }
+        RecordType: { type: string }
+        Subject: { type: string }
+        Description: { type: string }
+        Status: { type: string }
+        CaseOrigin: { type: string }
+        Priority: { type: string }
+
+    MeterProfileRequest:
+      type: object
+      required: [ContractCode, PDPCode, Frequency, StartDate, Status, AnnualValue]
+      properties:
+        ContractCode: { type: string, example: "CT-000123" }
+        PDPCode: { type: string, example: "PDP-45678" }
+        Frequency: { type: string, example: "Mensile" }
+        StartDate: { type: string, format: date, example: "2025-01-01" }
+        EndDate: { type: string, format: date, example: "2025-12-31" }
+        Status: { type: string, example: "Attivo" }
+        AnnualValue: { type: number, example: 1200.5 }
+
+    MeterProfileResponse:
+      type: object
+      properties:
+        Id: { type: string, example: "a0X1x000000ABCDEAA" }
+        MeterProfile_Name: { type: string, example: "MP-000123" }
+        result: { type: boolean, example: true }
+
+    ReadingPayload:
+      type: object
+      properties:
+        Consuming:
+          type: object
+          properties:
+            Date: { type: string, format: date, example: "2025-06-01" }
+            ReadingType: { type: string, example: "Reale" }
+            Status: { type: string, example: "Validata" }
+            Value: { type: number, example: 1234.56 }
+            WaterDamage: { type: boolean, default: false, example: false }
+        Contract:
+          type: object
+          properties:
+            Id: { type: string, example: "CT-000123" }
+        Customer:
+          type: object
+          properties:
+            Id: { type: string, example: "1000456" }
+        Meter:
+          type: object
+          properties:
+            Id: { type: string, example: "SN-998877" }
+        PDP:
+          type: object
+          properties:
+            Id: { type: string, example: "PDP-45678" }
+
+    AssetPayload:
+      type: object
+      properties:
+        AppKey: { type: string, example: "A1B2C3D4" }
+        Brand: { type: string, example: "Sensus" }
+        Class: { type: string, example: "C" }
+        Company: { type: string, example: "EXT-COMP-001" }
+        DigitsNumber: { type: integer, example: 6 }
+        Id: { type: string, example: "ASSET-000123" }
+        Length: { type: number, example: 190 }
+        MetrologicalClass: { type: string, example: "R160" }
+        Model: { type: string, example: "iPERL" }
+        Protocol: { type: string, example: "wM-Bus" }
+        Q3FlowRate: { type: number, example: 2.5 }
+        SerialNumber: { type: string, example: "SN-998877" }
+        Service: { type: string, example: "Acqua" }
+        Status: { type: string, example: "Installed" }
+        Technology: { type: string, example: "Static" }
+        Year: { type: integer, example: 2024 }
+
+    ReadingsByDatesAndContractsRequest:
+      type: object
+      description: '[ILLUSTRATIVO] Struttura non ricavabile dal codice (pass-through).'
+      properties:
+        contracts:
+          type: array
+          items: { type: string }
+          example: ["CT-000123", "CT-000124"]
+        startDate: { type: string, format: date, example: "2025-01-01" }
+        endDate: { type: string, format: date, example: "2025-01-31" }
+
+    ContractRequest:
+      type: object
+      description: '[ILLUSTRATIVO] Aggrega le entita toccate dal flusso; schema da validare.'
+      properties:
+        contract: { type: object }
+        billingProfiles:
+          type: array
+          items: { type: object }
+        contractLines:
+          type: array
+          items: { type: object }
+        customer: { type: object }
+        pdp: { type: object }
+        asset: { type: object }
+        tank: { type: object }
